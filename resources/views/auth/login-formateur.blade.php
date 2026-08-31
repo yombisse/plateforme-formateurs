@@ -1,4 +1,4 @@
-<x-layouts.guest>
+<!-- <x-layouts.guest>
     <div class="text-center">
         <p class="text-sm font-semibold uppercase tracking-[0.26em] text-orange-600">Connexion formateur</p>
         <h1 class="mt-4 text-3xl font-semibold text-slate-900">Bienvenue</h1>
@@ -36,4 +36,4 @@
             <button type="submit" class="inline-flex w-full items-center justify-center rounded-[10px] bg-[#FF7A1A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-100">Se connecter</button>
         </div>
     </form>
-</x-layouts.guest>
+</x-layouts.guest> -->
