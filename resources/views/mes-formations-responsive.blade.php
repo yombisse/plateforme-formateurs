@@ -30,7 +30,7 @@
             @foreach($formations as $formation)
                 <article class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5">
                     <div class="relative h-48 sm:h-56 lg:h-72 overflow-hidden bg-slate-100">
-                        <img src="{{ $formation->image ?? 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80' }}" alt="{{ $formation->title }}" class="h-full w-full object-cover transition duration-500" />
+                        <img src="{{ $formation->image_url ?? 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80' }}" alt="{{ $formation->title }}" class="h-full w-full object-cover transition duration-500" />
                     </div>
                     <div class="p-4 sm:p-6">
                         <div class="flex flex-wrap gap-2 text-xs sm:text-sm text-slate-500">

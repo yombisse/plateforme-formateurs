@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use App\Models\Evaluation;
-use App\Models\Inscription;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Formation extends Model
 {
     use HasFactory;
 
-    protected $appends = ['date', 'duration', 'remaining_places'];
+    protected $appends = ['date', 'duration', 'remaining_places', 'image_url'];
 
     protected $fillable = [
         'user_id',
@@ -35,6 +34,7 @@ class Formation extends Model
         'currency',
         'delivery_link',
         'image',
+        'image_public_id',
         'objectives',
         'modules',
         'learning_points',
@@ -85,22 +85,35 @@ class Formation extends Model
 
     public function getDurationAttribute(): ?string
     {
-        if (!$this->start_date || !$this->end_date) {
+        if (! $this->start_date || ! $this->end_date) {
             return null;
         }
 
-        $start = \Carbon\Carbon::parse($this->start_date);
-        $end = \Carbon\Carbon::parse($this->end_date);
+        $start = Carbon::parse($this->start_date);
+        $end = Carbon::parse($this->end_date);
         $days = $start->diffInDays($end);
 
         if ($days < 7) {
-            return $days . ' jour' . ($days > 1 ? 's' : '');
+            return $days.' jour'.($days > 1 ? 's' : '');
         } elseif ($days < 30) {
             $weeks = ceil($days / 7);
-            return $weeks . ' semaine' . ($weeks > 1 ? 's' : '');
+
+            return $weeks.' semaine'.($weeks > 1 ? 's' : '');
         } else {
             $months = ceil($days / 30);
-            return $months . ' mois';
+
+            return $months.' mois';
         }
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image) {
+            return null;
+        }
+
+        return str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://') || str_starts_with($this->image, '/storage/')
+            ? $this->image
+            : Storage::disk('public')->url($this->image);
     }
 }

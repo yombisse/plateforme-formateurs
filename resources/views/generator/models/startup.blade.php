@@ -18,7 +18,7 @@
     </g>
 
     {{-- Logo --}}
-    @if($formation->image)
+    @if($formation->image_url)
     <g transform="translate(470,55)">
         <defs>
             <filter id="startupLogoShadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -28,7 +28,6 @@
         <clipPath id="st-logo-clip">
             <rect x="0" y="0" width="80" height="80" rx="20" />
         </clipPath>
-        <image x="0" y="0" width="80" height="80" preserveAspectRatio="xMidYMid slice" href="{{ $formation->image }}" clip-path="url(#st-logo-clip)" filter="url(#startupLogoShadow)" />
     </g>
     @endif
 

@@ -62,7 +62,7 @@ window.posterGenerator = function (serverFormation) {
         get p_start() { return this.formatDate(this.formation.start_date); },
         get p_end() { return this.formation.end_date ? this.formatDate(this.formation.end_date) : ''; },
         get p_place() { return this.formatPlace(); },
-        get p_image() { return this.formation.image || ''; },
+        get p_image() { return this.formation.image_url || this.formation.image || ''; },
         get p_benefits() { return this.smartBenefits(); },
         get p_cta() { return this.smartCTA(); },
         get p_contact() { return this.formatContact(); },

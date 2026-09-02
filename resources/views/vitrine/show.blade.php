@@ -12,7 +12,7 @@
 
         <div class="rounded-[1.75rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div class="relative">
-                <img src="{{ $formation->image }}" alt="{{ $formation->title }}" class="aspect-video w-full object-cover" />
+                <img src="{{ $formation->image_url }}" alt="{{ $formation->title }}" class="aspect-video w-full object-cover" />
                 <div class="absolute inset-x-0 bottom-0 px-5 pb-5 flex flex-wrap items-center gap-2">
                     <span class="inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-700 shadow-sm">{{ $formation->category }}</span>
                     <span class="inline-flex items-center gap-2 rounded-full bg-orange-600 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white">

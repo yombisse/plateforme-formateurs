@@ -42,7 +42,7 @@
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div class="flex items-center gap-4">
                                 <div class="h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-3xl bg-slate-200 flex-shrink-0">
-                                    <img src="{{ $formation->image }}" alt="{{ $formation->title }}" class="h-full w-full object-cover" />
+                                    <img src="{{ $formation->image_url }}" alt="{{ $formation->title }}" class="h-full w-full object-cover" />
                                 </div>
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-slate-900 truncate">{{ $formation->title }}</p>

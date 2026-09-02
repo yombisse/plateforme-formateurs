@@ -133,7 +133,7 @@
                     <a href="{{ route('formations.show', $formation->slug) }}" class="absolute inset-0 z-10"></a>
 
                     <div class="relative overflow-hidden">
-                        <img src="{{ $formation->image }}" alt="{{ $formation->title }}" class="aspect-video w-full object-cover" />
+                        <img src="{{ $formation->image_url }}" alt="{{ $formation->title }}" class="aspect-video w-full object-cover" />
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/20 to-transparent"></div>
                         <span class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 backdrop-blur">
                             {{ $formation->category }}

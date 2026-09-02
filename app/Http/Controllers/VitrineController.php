@@ -4,22 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Formation;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Services\CloudinaryMediaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class VitrineController extends Controller
 {
+    public function __construct(private readonly CloudinaryMediaService $media) {}
+
     private function getTrainerData(): array
     {
         // Récupérer le premier utilisateur formateur (pour l'instant)
         // Dans un vrai système, on pourrait avoir un système multi-formateurs
         $trainer = User::whereHas('formations')->first();
-        
-        if (!$trainer) {
+
+        if (! $trainer) {
             // Données par défaut si aucun formateur
             return [
                 'name' => 'FormatPro',
@@ -46,7 +46,7 @@ class VitrineController extends Controller
         // Calculer les statistiques
         $formationsCount = $trainer->formations()->count();
         $studentsCount = $trainer->formations()->withCount('inscriptions')->get()->sum('inscriptions_count');
-        
+
         // Calculer la note moyenne
         $totalRating = 0;
         $totalEvaluations = 0;
@@ -61,7 +61,7 @@ class VitrineController extends Controller
 
         return [
             'name' => $trainer->name,
-            'photo' => $trainer->profile_photo ? asset('storage/' . $trainer->profile_photo) : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+            'photo' => $trainer->profile_photo_url ?: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
             'specialty' => $trainer->specialty ?? 'Formateur professionnel',
             'location' => $trainer->location ?? 'Non renseigné',
             'phone' => $trainer->phone ?? '',
@@ -73,11 +73,11 @@ class VitrineController extends Controller
             'tags' => $trainer->tags ?? ['Formation', 'Compétences'],
             'stats' => [
                 ['value' => $formationsCount, 'label' => 'formations'],
-                ['value' => $studentsCount > 1000 ? ($studentsCount / 1000) . 'k' : $studentsCount, 'label' => 'apprenants'],
+                ['value' => $studentsCount > 1000 ? ($studentsCount / 1000).'k' : $studentsCount, 'label' => 'apprenants'],
                 ['value' => $averageRating, 'label' => 'note moyenne'],
             ],
             'bio' => $trainer->bio ?? 'Aucune description disponible.',
-            'hero_image' => $trainer->hero_image ? asset('storage/' . $trainer->hero_image) : 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=80',
+            'hero_image' => $trainer->hero_image_url ?: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=80',
         ];
     }
 
@@ -140,82 +140,82 @@ class VitrineController extends Controller
                 'practical_info.*' => ['nullable', 'string'],
                 'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
             ]);
-       
-        \Log::info('Validation réussie', ['validated' => $valid]);
 
-        $slug = Str::slug($valid['name']);
-        $baseSlug = $slug;
-        $counter = 1;
-        while (Formation::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
+            \Log::info('Validation réussie', ['validated' => $valid]);
 
-        $imageUrl = null;
-        if ($request->hasFile('cover_image') && $request->file('cover_image')->isValid()) {
-            $imagePath = $request->file('cover_image')->store('formations', 'public');
-            $imageUrl = Storage::url($imagePath);
-        }
-
-        \Log::info('Tentative de création de formation', [
-            'user_id' => Auth::id(),
-            'validated_data' => $valid,
-            'has_image' => $request->hasFile('cover_image'),
-            'image_url' => $imageUrl,
-        ]);
-       
-        // Process modules data
-        $modules = $valid['modules'] ?? [];
-        $processedModules = [];
-        foreach ($modules as $module) {
-            if (is_array($module)) {
-                $processedModules[] = [
-                    'title' => $module['title'] ?? '',
-                    'description' => $module['description'] ?? ''
-                ];
-            } else {
-                $processedModules[] = [
-                    'title' => $module,
-                    'description' => ''
-                ];
+            $slug = Str::slug($valid['name']);
+            $baseSlug = $slug;
+            $counter = 1;
+            while (Formation::where('slug', $slug)->exists()) {
+                $slug = $baseSlug.'-'.$counter;
+                $counter++;
             }
-        }
 
-        $formation = Formation::create([
-            'user_id' => Auth::id(),
-            'slug' => $slug,
-            'title' => $valid['name'],
-            'trainer_name' => $valid['trainer_name'] ?? Auth::user()->name,
-            'short_description' => $valid['short_description'],
-            'full_description' => $valid['full_description'],
-            'category' => $valid['category'],
-            'level' => $valid['level'],
-            'start_date' => $valid['start_date'],
-            'end_date' => $valid['end_date'],
-            'mode' => $valid['mode'],
-            'location' => $valid['delivery_link'],
-            'delivery_link' => $valid['delivery_link'],
-            'price' => $valid['price'],
-            'currency' => $valid['currency'],
-            'max_places' => $valid['max_places'],
-            'image' => $imageUrl,
-            'objectives' => $valid['objectives'] ?? [],
-            'modules' => $processedModules,
-            'practical_info' => $valid['practical_info'] ?? [],
-            'status' => 'Brouillon',
-        ]);
+            $image = null;
+            if ($request->hasFile('cover_image') && $request->file('cover_image')->isValid()) {
+                $image = $this->media->upload($request->file('cover_image'), 'formations');
+            }
 
-        \Log::info('Formation créée avec succès', ['formation_id' => $formation->id, 'slug' => $formation->slug]);
+            \Log::info('Tentative de création de formation', [
+                'user_id' => Auth::id(),
+                'validated_data' => $valid,
+                'has_image' => $request->hasFile('cover_image'),
+                'image_url' => $image['url'] ?? null,
+            ]);
 
-        return redirect()->route('formations.mes')->with('success', 'Formation créée avec succès !');
-        
+            // Process modules data
+            $modules = $valid['modules'] ?? [];
+            $processedModules = [];
+            foreach ($modules as $module) {
+                if (is_array($module)) {
+                    $processedModules[] = [
+                        'title' => $module['title'] ?? '',
+                        'description' => $module['description'] ?? '',
+                    ];
+                } else {
+                    $processedModules[] = [
+                        'title' => $module,
+                        'description' => '',
+                    ];
+                }
+            }
+
+            $formation = Formation::create([
+                'user_id' => Auth::id(),
+                'slug' => $slug,
+                'title' => $valid['name'],
+                'trainer_name' => $valid['trainer_name'] ?? Auth::user()->name,
+                'short_description' => $valid['short_description'],
+                'full_description' => $valid['full_description'],
+                'category' => $valid['category'],
+                'level' => $valid['level'],
+                'start_date' => $valid['start_date'],
+                'end_date' => $valid['end_date'],
+                'mode' => $valid['mode'],
+                'location' => $valid['delivery_link'],
+                'delivery_link' => $valid['delivery_link'],
+                'price' => $valid['price'],
+                'currency' => $valid['currency'],
+                'max_places' => $valid['max_places'],
+                'image' => $image['url'] ?? null,
+                'image_public_id' => $image['public_id'] ?? null,
+                'objectives' => $valid['objectives'] ?? [],
+                'modules' => $processedModules,
+                'practical_info' => $valid['practical_info'] ?? [],
+                'status' => 'Brouillon',
+            ]);
+
+            \Log::info('Formation créée avec succès', ['formation_id' => $formation->id, 'slug' => $formation->slug]);
+
+            return redirect()->route('formations.mes')->with('success', 'Formation créée avec succès !');
+
         } catch (\Exception $e) {
             \Log::error('Erreur lors de la création de formation', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
-            return back()->withInput()->with('error', 'Erreur lors de la création: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Erreur lors de la création: '.$e->getMessage());
         }
     }
 
@@ -258,6 +258,7 @@ class VitrineController extends Controller
             'objectives' => ['nullable', 'array'],
             'modules' => ['nullable', 'array'],
             'practical_info' => ['nullable', 'array'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
         ]);
 
         $newSlug = Str::slug($valid['name']);
@@ -265,15 +266,15 @@ class VitrineController extends Controller
             $baseSlug = $newSlug;
             $counter = 1;
             while (Formation::where('slug', $newSlug)->where('id', '!=', $formation->id)->exists()) {
-                $newSlug = $baseSlug . '-' . $counter;
+                $newSlug = $baseSlug.'-'.$counter;
                 $counter++;
             }
         }
 
-        $imageUrl = $formation->image;
+        $image = null;
+        $oldImagePublicId = $formation->image_public_id;
         if ($request->hasFile('cover_image') && $request->file('cover_image')->isValid()) {
-            $imagePath = $request->file('cover_image')->store('formations', 'public');
-            $imageUrl = Storage::url($imagePath);
+            $image = $this->media->upload($request->file('cover_image'), 'formations');
         }
 
         $formation->update([
@@ -285,7 +286,7 @@ class VitrineController extends Controller
             'trainer_name' => $valid['trainer_name'] ?? Auth::user()->name,
             'short_description' => $valid['short_description'],
             'full_description' => $valid['full_description'],
-            'status' => $valid['status'],
+            'status' => $valid['status'] ?? $formation->status,
             'start_date' => $valid['start_date'],
             'end_date' => $valid['end_date'],
             'location' => $valid['delivery_link'],
@@ -293,12 +294,17 @@ class VitrineController extends Controller
             'price' => $valid['price'],
             'currency' => $valid['currency'],
             'delivery_link' => $valid['delivery_link'],
-            'image' => $imageUrl,
+            'image' => $image['url'] ?? $formation->image,
+            'image_public_id' => $image['public_id'] ?? $formation->image_public_id,
             'objectives' => $valid['objectives'] ?? [],
             'modules' => $valid['modules'] ?? [],
             'practical_info' => array_filter(array_map('trim', $valid['practical_info'] ?? [])),
             'about' => substr($valid['full_description'], 0, 220),
         ]);
+
+        if ($image) {
+            $this->media->delete($oldImagePublicId);
+        }
 
         return redirect()->route('formations.mes')->with('success', 'Formation mise à jour avec succès.');
     }
@@ -306,6 +312,7 @@ class VitrineController extends Controller
     public function destroyFormation(string $slug)
     {
         $formation = Auth::user()->formations()->where('slug', $slug)->firstOrFail();
+        $this->media->delete($formation->image_public_id);
         $formation->delete();
 
         return redirect()->route('formations.mes')->with('success', 'Formation supprimée avec succès.');
@@ -333,7 +340,7 @@ class VitrineController extends Controller
         $formations = Auth::user()->formations()->orderBy('start_date', 'asc')->get();
 
         return view('mes-formations', compact('formateur', 'formations'));
-}
+    }
 
     public function show(string $slug)
     {
@@ -352,11 +359,9 @@ class VitrineController extends Controller
             'slug' => $slug,
             'formation_id' => $formation->id,
             'title' => $formation->title,
-            'has_data' => !empty($formation->title),
+            'has_data' => ! empty($formation->title),
         ]);
 
         return view('generator', compact('formation'));
     }
-
-
 }

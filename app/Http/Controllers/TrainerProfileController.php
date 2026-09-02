@@ -2,19 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Services\CloudinaryMediaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class TrainerProfileController extends Controller
 {
+    public function __construct(private readonly CloudinaryMediaService $media) {}
+
     /**
      * Afficher le formulaire d'édition du profil
      */
     public function edit()
     {
         $user = Auth::user();
+
         return view('admin.trainer-profile.edit', compact('user'));
     }
 
@@ -27,7 +30,7 @@ class TrainerProfileController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'specialty' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
@@ -54,22 +57,32 @@ class TrainerProfileController extends Controller
             'tags' => $request->tags ? array_map('trim', explode(',', $request->tags)) : null,
         ]);
 
-        // Gestion de la photo de profil
+        $newProfilePhoto = null;
         if ($request->hasFile('profile_photo')) {
-            if ($user->profile_photo) {
-                Storage::disk('public')->delete($user->profile_photo);
-            }
-            $profilePhotoPath = $request->file('profile_photo')->store('profile-photos', 'public');
-            $user->update(['profile_photo' => $profilePhotoPath]);
+            $newProfilePhoto = $this->media->upload($request->file('profile_photo'), 'trainers/profile');
         }
 
-        // Gestion de l'image hero
+        $newHeroImage = null;
         if ($request->hasFile('hero_image')) {
-            if ($user->hero_image) {
-                Storage::disk('public')->delete($user->hero_image);
-            }
-            $heroImagePath = $request->file('hero_image')->store('hero-images', 'public');
-            $user->update(['hero_image' => $heroImagePath]);
+            $newHeroImage = $this->media->upload($request->file('hero_image'), 'trainers/heroes');
+        }
+
+        if ($newProfilePhoto) {
+            $oldProfilePhotoPublicId = $user->profile_photo_public_id;
+            $user->update([
+                'profile_photo' => $newProfilePhoto['url'],
+                'profile_photo_public_id' => $newProfilePhoto['public_id'],
+            ]);
+            $this->media->delete($oldProfilePhotoPublicId);
+        }
+
+        if ($newHeroImage) {
+            $oldHeroImagePublicId = $user->hero_image_public_id;
+            $user->update([
+                'hero_image' => $newHeroImage['url'],
+                'hero_image_public_id' => $newHeroImage['public_id'],
+            ]);
+            $this->media->delete($oldHeroImagePublicId);
         }
 
         // Mise à jour des statistiques
@@ -87,10 +100,10 @@ class TrainerProfileController extends Controller
     public function destroyProfilePhoto()
     {
         $user = Auth::user();
-        
+
         if ($user->profile_photo) {
-            Storage::disk('public')->delete($user->profile_photo);
-            $user->update(['profile_photo' => null]);
+            $this->media->delete($user->profile_photo_public_id);
+            $user->update(['profile_photo' => null, 'profile_photo_public_id' => null]);
         }
 
         return back()->with('success', 'Photo de profil supprimée.');
@@ -102,10 +115,10 @@ class TrainerProfileController extends Controller
     public function destroyHeroImage()
     {
         $user = Auth::user();
-        
+
         if ($user->hero_image) {
-            Storage::disk('public')->delete($user->hero_image);
-            $user->update(['hero_image' => null]);
+            $this->media->delete($user->hero_image_public_id);
+            $user->update(['hero_image' => null, 'hero_image_public_id' => null]);
         }
 
         return back()->with('success', 'Image hero supprimée.');
@@ -116,15 +129,15 @@ class TrainerProfileController extends Controller
      */
     public function getTrainerData($userId = null)
     {
-        $user = $userId ? \App\Models\User::find($userId) : Auth::user();
-        
-        if (!$user) {
+        $user = $userId ? User::find($userId) : Auth::user();
+
+        if (! $user) {
             return null;
         }
 
         return [
             'name' => $user->name,
-            'photo' => $user->profile_photo ? asset('storage/' . $user->profile_photo) : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+            'photo' => $user->profile_photo_url ?: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
             'specialty' => $user->specialty ?? 'Formateur',
             'location' => $user->location ?? 'Non renseigné',
             'phone' => $user->phone ?? '',
@@ -136,11 +149,11 @@ class TrainerProfileController extends Controller
             'tags' => $user->tags ?? ['Formation', 'Compétences'],
             'stats' => [
                 ['value' => $user->formations_count, 'label' => 'formations'],
-                ['value' => $user->students_count > 1000 ? ($user->students_count / 1000) . 'k' : $user->students_count, 'label' => 'apprenants'],
+                ['value' => $user->students_count > 1000 ? ($user->students_count / 1000).'k' : $user->students_count, 'label' => 'apprenants'],
                 ['value' => $this->getAverageRating($user), 'label' => 'note moyenne'],
             ],
             'bio' => $user->bio ?? 'Aucune description disponible.',
-            'hero_image' => $user->hero_image ? asset('storage/' . $user->hero_image) : 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=80',
+            'hero_image' => $user->hero_image_url ?: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=80',
         ];
     }
 

@@ -74,7 +74,7 @@
                         <label class="block text-sm font-medium text-slate-700 mb-2">Photo de profil</label>
                         <div class="flex items-start gap-4">
                             @if($user->profile_photo)
-                                <img src="{{ asset('storage/' . $user->profile_photo) }}" alt="Photo de profil" class="h-20 w-20 rounded-full object-cover">
+                                <img src="{{ $user->profile_photo_url }}" alt="Photo de profil" class="h-20 w-20 rounded-full object-cover">
                             @else
                                 <div class="h-20 w-20 rounded-full bg-slate-200 flex items-center justify-center">
                                     <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +101,7 @@
                         <label class="block text-sm font-medium text-slate-700 mb-2">Image de couverture</label>
                         <div class="flex items-start gap-4">
                             @if($user->hero_image)
-                                <img src="{{ asset('storage/' . $user->hero_image) }}" alt="Image hero" class="h-20 w-32 object-cover rounded-lg">
+                                <img src="{{ $user->hero_image_url }}" alt="Image hero" class="h-20 w-32 object-cover rounded-lg">
                             @else
                                 <div class="h-20 w-32 rounded-lg bg-slate-200 flex items-center justify-center">
                                     <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

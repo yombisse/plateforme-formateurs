@@ -20,7 +20,7 @@
     </g>
 
     {{-- Logo --}}
-    @if($formation->image)
+    @if($formation->image_url)
     <g transform="translate(460,50)">
         <defs>
             <filter id="academicLogoShadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -30,7 +30,7 @@
         <clipPath id="ac-logo-clip">
             <rect x="0" y="0" width="80" height="80" rx="40" />
         </clipPath>
-        <image x="0" y="0" width="80" height="80" preserveAspectRatio="xMidYMid slice" href="{{ $formation->image }}" clip-path="url(#ac-logo-clip)" filter="url(#academicLogoShadow)" />
+        <image x="0" y="0" width="80" height="80" preserveAspectRatio="xMidYMid slice" href="{{ $formation->image_url }}" clip-path="url(#ac-logo-clip)" filter="url(#academicLogoShadow)" />
     </g>
     @endif
 

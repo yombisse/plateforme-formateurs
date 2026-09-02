@@ -261,10 +261,10 @@
                         </div>
                     </div>
                     
-                    @if($formation && $formation->image && !$formation->image)
+                    @if($formation && $formation->image_url)
                         <div class="mt-4">
                             <p class="text-sm text-slate-600 mb-2">Image actuelle :</p>
-                            <img src="{{ $formation->image }}" alt="Image actuelle" class="h-32 w-full object-cover rounded-lg" />
+                            <img src="{{ $formation->image_url }}" alt="Image actuelle" class="h-32 w-full object-cover rounded-lg" />
                         </div>
                     @endif
                 </div>
